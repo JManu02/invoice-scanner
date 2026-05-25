@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Variables de entorno (NUNCA al repo)
+.env
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Uploads temporales
+uploads/
+python-service/.env
+node-api/.env
