@@ -11,6 +11,7 @@ venv/
 
 # Variables de entorno (NUNCA al repo)
 .env
+**/.env
 
 # Archivos del sistema
 .DS_Store
@@ -18,6 +19,4 @@ Thumbs.db
 
 # Uploads temporales
 uploads/
-python-service/.env
-node-api/.env
-node-api/.env
+temp_uploads/
