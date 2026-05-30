@@ -47,5 +47,11 @@ export const useInvoices = () => {
     fetchStats();
   }, []);
 
-  return { invoices, stats, loading, error, fetchInvoices, fetchStats, uploadInvoice, deleteInvoice };
+  const deleteAllInvoices = async () => {
+    await client.delete("/invoices/all");
+    setInvoices([]);
+    setStats(null);
+  };
+
+  return { invoices, stats, loading, error, fetchInvoices, fetchStats, uploadInvoice, deleteInvoice, deleteAllInvoices };
 };

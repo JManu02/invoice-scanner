@@ -24,14 +24,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hashea la contraseña antes de guardar
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+// En Mongoose 8+ los hooks pre son async sin next
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
-// Método para comparar contraseñas
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };

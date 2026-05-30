@@ -82,8 +82,8 @@ export default function Upload() {
             <h3 style={styles.resultTitle}>✅ Factura procesada</h3>
             <div style={styles.resultGrid}>
               <ResultRow label="Proveedor" value={result.vendor} />
-              <ResultRow label="Monto" value={result.amount ? `$${result.amount.toFixed(2)}` : "—"} />
-              <ResultRow label="IVA" value={result.tax ? `$${result.tax.toFixed(2)}` : "—"} />
+              <ResultRow label="Monto" value={result.amount ? `₡${result.amount.toLocaleString("es-CR")}` : "—"} />
+              <ResultRow label="IVA" value={result.tax ? `₡${result.tax.toLocaleString("es-CR")}` : "—"} />
               <ResultRow label="Fecha" value={result.date || "—"} />
               <ResultRow label="Categoría" value={result.category} accent />
             </div>
@@ -91,7 +91,7 @@ export default function Upload() {
               <button style={styles.btn} onClick={() => { setResult(null); setFile(null); }}>
                 Subir otra
               </button>
-              <button style={{...styles.btn, ...styles.btnOutline}} onClick={() => navigate("/history")}>
+              <button style={{ ...styles.btn, ...styles.btnOutline }} onClick={() => navigate("/history")}>
                 Ver historial
               </button>
             </div>
@@ -118,37 +118,38 @@ const rowStyles = {
 };
 
 const styles = {
-  container: { minHeight: "100vh", background: "var(--bg-primary)", padding: "2rem" },
-  header: { display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" },
-  back: { background: "transparent", border: "none", color: "var(--accent-cyan)", cursor: "pointer", fontSize: "0.95rem" },
-  title: { fontSize: "1.5rem", fontWeight: 600 },
+  container: { minHeight: "100vh", background: "var(--bg-primary)", padding: "1.5rem" },
+  header: { display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" },
+  back: { background: "transparent", border: "none", color: "var(--accent-cyan)", cursor: "pointer", fontSize: "0.95rem", whiteSpace: "nowrap" },
+  title: { fontSize: "1.3rem", fontWeight: 600 },
   card: {
     background: "var(--bg-secondary)", border: "1px solid var(--border)",
-    borderRadius: "16px", padding: "2rem", maxWidth: "600px", margin: "0 auto",
+    borderRadius: "16px", padding: "1.5rem",
+    maxWidth: "600px", margin: "0 auto", width: "100%",
   },
   dropzone: {
-    border: "2px dashed", borderRadius: "12px", padding: "3rem 2rem",
+    border: "2px dashed", borderRadius: "12px", padding: "2.5rem 1.5rem",
     textAlign: "center", cursor: "pointer", transition: "all 0.2s",
   },
   dropContent: { display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" },
-  dropIcon: { fontSize: "3rem" },
+  dropIcon: { fontSize: "2.5rem" },
   dropText: { fontSize: "1rem", fontWeight: 500 },
-  dropSub: { color: "var(--text-secondary)", fontSize: "0.85rem" },
-  fileName: { fontWeight: 500, color: "var(--accent-cyan)" },
+  dropSub: { color: "var(--text-secondary)", fontSize: "0.82rem" },
+  fileName: { fontWeight: 500, color: "var(--accent-cyan)", wordBreak: "break-all" },
   error: {
     background: "rgba(239,68,68,0.1)", border: "1px solid var(--error)",
     color: "var(--error)", padding: "0.75rem 1rem", borderRadius: "8px",
-    marginTop: "1rem", fontSize: "0.9rem",
+    marginTop: "1rem", fontSize: "0.88rem",
   },
   btn: {
     width: "100%", marginTop: "1.25rem",
     background: "linear-gradient(135deg, var(--accent-violet), var(--accent-cyan))",
     border: "none", borderRadius: "8px", padding: "0.875rem",
-    color: "#fff", fontWeight: 600, fontSize: "1rem", cursor: "pointer",
+    color: "#fff", fontWeight: 600, fontSize: "0.95rem", cursor: "pointer",
   },
   btnOutline: { background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)" },
   result: { marginTop: "1.5rem" },
-  resultTitle: { fontSize: "1.1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--success)" },
+  resultTitle: { fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--success)" },
   resultGrid: { display: "flex", flexDirection: "column" },
-  resultActions: { display: "flex", gap: "1rem" },
+  resultActions: { display: "flex", gap: "0.75rem", flexWrap: "wrap" },
 };
