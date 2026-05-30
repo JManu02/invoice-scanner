@@ -3,8 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.routes import invoice
 import os
+import pytesseract
 
 load_dotenv()
+
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 app = FastAPI(
     title="Invoice Scanner API",
@@ -12,7 +15,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS - solo acepta requests desde Node
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(","),
@@ -21,7 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rutas
 app.include_router(invoice.router, prefix="/api/invoices", tags=["invoices"])
 
 @app.get("/")

@@ -11,6 +11,8 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    console.log("Intento de registro:", { name, email }); // Agrega esta línea
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "El email ya está registrado" });
@@ -24,6 +26,7 @@ exports.register = async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (err) {
+    console.error("Error en registro:", err); // Modifica esta línea
     res.status(500).json({ message: "Error al registrar usuario", error: err.message });
   }
 };

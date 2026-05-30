@@ -25,6 +25,10 @@ app.get("/", (req, res) => {
   res.json({ status: "ok", service: "node-invoice-api" });
 });
 
+process.on('unhandledRejection', (err) => {
+  console.error('Error no manejado:', err);
+});
+
 // Conexión a MongoDB
 mongoose
   .connect(process.env.MONGODB_URI)

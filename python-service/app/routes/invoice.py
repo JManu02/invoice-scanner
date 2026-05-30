@@ -28,6 +28,8 @@ async def process_invoice(file: UploadFile = File(...)):
         invoice_data = extract_invoice_data(raw_text)
         return {"success": True, "data": invoice_data}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        os.remove(temp_path)  # Limpia el archivo temporal
+        os.remove(temp_path)
