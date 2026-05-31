@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInvoices } from "../hooks/useInvoices";
+import Layout from "../components/Layout";
+import { Trash, FunnelSimple, ReceiptX } from "@phosphor-icons/react";
 
 const CATEGORIES = ["Todas", "Alimentación", "Transporte", "Servicios", "Salud", "Tecnología", "Otros"];
 
@@ -19,105 +21,177 @@ export default function History() {
     await deleteInvoice(id);
   };
 
+  const handleDeleteAll = async () => {
+    if (!window.confirm(`¿Eliminar las ${invoices.length} facturas? Esta acción no se puede deshacer.`)) return;
+    await deleteAllInvoices();
+  };
+
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <button style={styles.back} onClick={() => navigate("/")}>← Volver</button>
-        <h2 style={styles.title}>Historial</h2>
+    <Layout title="Historial de facturas">
+
+      {/* Header row */}
+      <div style={styles.headerRow}>
+        <div>
+          <h2 style={styles.title}>Facturas registradas</h2>
+          <p style={styles.subtitle}>{invoices.length} documento{invoices.length !== 1 ? "s" : ""} encontrado{invoices.length !== 1 ? "s" : ""}</p>
+        </div>
         {invoices.length > 0 && (
-          <button
-            style={styles.deleteAllBtn}
-            onClick={async () => {
-              if (window.confirm(`¿Eliminar las ${invoices.length} facturas? Esta acción no se puede deshacer.`)) {
-                await deleteAllInvoices();
-              }
-            }}
-          >
-            🗑 Eliminar todas
+          <button className="btn-danger" onClick={handleDeleteAll}>
+            <Trash size={15} />
+            Eliminar todas
           </button>
         )}
       </div>
 
-      <div style={styles.filters}>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            style={{ ...styles.filterBtn, ...(selected === cat ? styles.filterActive : {}) }}
-            onClick={() => handleFilter(cat)}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* Filters */}
+      <div style={styles.filtersRow}>
+        <FunnelSimple size={15} color="var(--text-muted)" />
+        <div style={styles.filters}>
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              style={{
+                ...styles.filterBtn,
+                ...(selected === cat ? styles.filterActive : {}),
+              }}
+              onClick={() => handleFilter(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* Content */}
       {loading ? (
-        <div style={styles.empty}>Cargando...</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={styles.skeletonRow} />
+          ))}
+        </div>
       ) : invoices.length === 0 ? (
-        <div style={styles.empty}>No hay facturas en esta categoría</div>
+        <div style={styles.emptyState}>
+          <div style={styles.emptyIcon}>
+            <ReceiptX size={40} color="var(--gray-400)" />
+          </div>
+          <p style={styles.emptyTitle}>Sin facturas</p>
+          <p style={styles.emptySub}>No hay facturas en esta categoría</p>
+          <button className="btn-primary" style={{ marginTop: 20 }} onClick={() => navigate("/upload")}>
+            Subir primera factura
+          </button>
+        </div>
       ) : (
-        <div style={styles.list}>
+        <div style={styles.table}>
+          {/* Table header */}
+          <div style={styles.tableHeader}>
+            <span style={{ flex: 2 }}>Proveedor</span>
+            <span style={{ flex: 1 }}>Categoría</span>
+            <span style={{ flex: 1 }}>Fecha</span>
+            <span style={{ flex: 1, textAlign: "right" }}>Monto</span>
+            <span style={{ width: 40 }} />
+          </div>
+
+          {/* Rows */}
           {invoices.map((inv) => (
-            <div key={inv._id} style={styles.card}>
-              <div style={styles.cardLeft}>
+            <div key={inv._id} style={styles.tableRow}>
+              <div style={{ flex: 2, minWidth: 0 }}>
                 <p style={styles.vendor}>{inv.vendor || "Sin nombre"}</p>
-                <p style={styles.meta}>{inv.date || "Sin fecha"} · {inv.fileName || ""}</p>
-                <span style={styles.badge}>{inv.category}</span>
+                <p style={styles.fileName}>{inv.fileName || ""}</p>
               </div>
-              <div style={styles.cardRight}>
+              <div style={{ flex: 1 }}>
+                <span className="badge badge-green">{inv.category}</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={styles.date}>{inv.date || "—"}</span>
+              </div>
+              <div style={{ flex: 1, textAlign: "right" }}>
                 <p style={styles.amount}>₡{inv.amount?.toLocaleString("es-CR") || "—"}</p>
-                {inv.tax && <p style={styles.tax}>IVA: ₡{inv.tax.toLocaleString("es-CR")}</p>}
-                <button style={styles.deleteBtn} onClick={() => handleDelete(inv._id)}>🗑</button>
+                {inv.tax && <p style={styles.tax}>IVA ₡{inv.tax.toLocaleString("es-CR")}</p>}
+              </div>
+              <div style={{ width: 40, display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  style={styles.deleteBtn}
+                  onClick={() => handleDelete(inv._id)}
+                  title="Eliminar"
+                >
+                  <Trash size={15} />
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
-    </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
+    </Layout>
   );
 }
 
 const styles = {
-  container: { minHeight: "100vh", background: "var(--bg-primary)", padding: "1.5rem" },
-  header: { display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.25rem" },
-  back: { background: "transparent", border: "none", color: "var(--accent-cyan)", cursor: "pointer", fontSize: "0.95rem", whiteSpace: "nowrap" },
-  title: { fontSize: "1.3rem", fontWeight: 600 },
-  filters: { display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.25rem" },
+  headerRow: {
+    display: "flex", justifyContent: "space-between",
+    alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12,
+  },
+  title: { fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" },
+  subtitle: { fontSize: "0.82rem", color: "var(--text-secondary)", marginTop: 4 },
+  filtersRow: { display: "flex", alignItems: "center", gap: 10, marginBottom: 20 },
+  filters: { display: "flex", gap: 6, flexWrap: "wrap" },
   filterBtn: {
-    background: "var(--bg-secondary)", border: "1px solid var(--border)",
-    borderRadius: "999px", padding: "0.35rem 0.875rem", color: "var(--text-secondary)",
-    cursor: "pointer", fontSize: "0.8rem", whiteSpace: "nowrap",
+    padding: "5px 14px", borderRadius: 99,
+    background: "var(--white)", border: "1px solid var(--border)",
+    color: "var(--text-secondary)", fontSize: "0.8rem", fontWeight: 500,
+    cursor: "pointer", transition: "all 0.15s",
   },
-  filterActive: { background: "var(--accent-violet)", color: "#fff", borderColor: "var(--accent-violet)" },
-  empty: { color: "var(--text-secondary)", textAlign: "center", padding: "4rem 0" },
-  list: { display: "flex", flexDirection: "column", gap: "0.75rem" },
-  card: {
-    background: "var(--bg-secondary)", border: "1px solid var(--border)",
-    borderRadius: "12px", padding: "1rem 1.25rem",
-    display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem",
+  filterActive: {
+    background: "var(--green-800)", borderColor: "var(--green-800)",
+    color: "white",
   },
-  cardLeft: { display: "flex", flexDirection: "column", gap: "0.3rem", flex: 1, minWidth: 0 },
-  vendor: { fontWeight: 600, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  meta: { color: "var(--text-secondary)", fontSize: "0.78rem" },
-  badge: {
-    display: "inline-block", background: "var(--accent-cyan-dim)",
-    color: "var(--accent-cyan)", borderRadius: "999px",
-    padding: "0.2rem 0.75rem", fontSize: "0.72rem", fontWeight: 500,
-    alignSelf: "flex-start",
+  skeletonRow: {
+    height: 64, borderRadius: "var(--radius-md)",
+    background: "var(--gray-100)", animation: "pulse 1.5s infinite",
   },
-  cardRight: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.25rem", flexShrink: 0 },
-  amount: { fontSize: "1.1rem", fontWeight: 700, color: "var(--accent-cyan)", whiteSpace: "nowrap" },
-  tax: { color: "var(--text-secondary)", fontSize: "0.75rem" },
-  deleteBtn: { background: "transparent", border: "none", cursor: "pointer", fontSize: "1rem", marginTop: "0.25rem" },
-  deleteAllBtn: {
-  marginLeft: "auto",
-  background: "rgba(239,68,68,0.1)",
-  border: "1px solid var(--error)",
-  borderRadius: "8px",
-  padding: "0.4rem 0.875rem",
-  color: "var(--error)",
-  cursor: "pointer",
-  fontSize: "0.82rem",
-  fontWeight: 500,
-  whiteSpace: "nowrap",
-},
+  emptyState: {
+    textAlign: "center", padding: "60px 0",
+    display: "flex", flexDirection: "column", alignItems: "center",
+  },
+  emptyIcon: {
+    width: 80, height: 80, borderRadius: "var(--radius-xl)",
+    background: "var(--gray-100)", display: "flex",
+    alignItems: "center", justifyContent: "center", marginBottom: 16,
+  },
+  emptyTitle: { fontSize: "1rem", fontWeight: 600, color: "var(--text-primary)" },
+  emptySub: { fontSize: "0.82rem", color: "var(--text-secondary)", marginTop: 4 },
+  table: {
+    background: "var(--white)", borderRadius: "var(--radius-lg)",
+    border: "1px solid var(--border)", overflow: "hidden",
+  },
+  tableHeader: {
+    display: "flex", alignItems: "center", gap: 16,
+    padding: "10px 20px",
+    background: "var(--gray-50)", borderBottom: "1px solid var(--border)",
+    fontSize: "0.72rem", fontWeight: 600,
+    color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em",
+  },
+  tableRow: {
+    display: "flex", alignItems: "center", gap: 16,
+    padding: "16px 20px", borderBottom: "1px solid var(--border)",
+    transition: "background 0.15s",
+  },
+  vendor: { fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  fileName: { fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 },
+  date: { fontSize: "0.82rem", color: "var(--text-secondary)" },
+  amount: { fontSize: "0.95rem", fontWeight: 700, color: "var(--green-800)" },
+  tax: { fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 },
+  deleteBtn: {
+    width: 32, height: 32, borderRadius: 8,
+    background: "transparent", border: "none",
+    color: "var(--gray-400)", display: "flex",
+    alignItems: "center", justifyContent: "center",
+    cursor: "pointer", transition: "background 0.15s, color 0.15s",
+  },
 };
