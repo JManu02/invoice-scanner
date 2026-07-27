@@ -7,7 +7,13 @@ import pytesseract
 
 load_dotenv()
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# En Linux (Docker/Render) pytesseract encuentra el binario 'tesseract' del PATH solo.
+# En Windows local usa la ruta típica de instalación, salvo que se sobreescriba con TESSERACT_CMD.
+tesseract_cmd = os.getenv("TESSERACT_CMD")
+if tesseract_cmd:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+elif os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 app = FastAPI(
     title="Invoice Scanner API",

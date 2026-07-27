@@ -1,0 +1,77 @@
+services:
+  # ------------------------------------------------------------------
+  # 1) Frontend: React + Vite servido como Static Site
+  # ------------------------------------------------------------------
+  - type: web
+    name: invoice-scanner-frontend
+    runtime: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: invoice-scanner-api
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # ------------------------------------------------------------------
+  # 2) node-api: Express + MongoDB (runtime nativo Node, sin Docker)
+  # ------------------------------------------------------------------
+  - type: web
+    name: invoice-scanner-api
+    runtime: node
+    plan: free
+    buildCommand: cd node-api && npm install
+    startCommand: cd node-api && node index.js
+    healthCheckPath: /
+    envVars:
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: invoice-scanner-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: PYTHON_SERVICE_URL
+        fromService:
+          type: web
+          name: invoice-scanner-ocr
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: MAX_FILE_SIZE
+        value: "10485760"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+  # ------------------------------------------------------------------
+  # 3) python-service: FastAPI + OCR (necesita binarios de sistema -> Docker)
+  # ------------------------------------------------------------------
+  - type: web
+    name: invoice-scanner-ocr
+    runtime: docker
+    plan: free
+    dockerfilePath: ./python-service/Dockerfile
+    dockerContext: ./python-service
+    healthCheckPath: /
+    envVars:
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: invoice-scanner-api
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: TESSERACT_LANG
+        value: spa+eng
+      - key: MIN_CONFIDENCE
+        value: "60"
+      - key: ENVIRONMENT
+        value: production
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
+      - key: GEMINI_API_KEY
+        sync: false
