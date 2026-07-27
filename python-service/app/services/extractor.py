@@ -5,54 +5,75 @@ def clean(text: str) -> str:
     return " ".join(text.split())
 
 def parse_amount(raw: str) -> float | None:
+    """Convierte montos en múltiples formatos CR a float."""
     try:
-        cleaned = raw.strip().replace(" ", "")
-        # Formato: 10,000.00 (coma=miles, punto=decimal)
+        cleaned = raw.strip()
+        # Elimina prefijos de moneda
+        cleaned = re.sub(r'^(CRC|₡|¢|colones)\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        cleaned = cleaned.replace(" ", "")
+
         if "," in cleaned and "." in cleaned:
             if cleaned.index(",") < cleaned.index("."):
-                # coma antes que punto: 10,000.00
+                # 10,000.00 → coma=miles, punto=decimal
                 cleaned = cleaned.replace(",", "")
             else:
-                # punto antes que coma: 10.000,00 (formato europeo)
+                # 10.000,00 → punto=miles, coma=decimal
                 cleaned = cleaned.replace(".", "").replace(",", ".")
         elif "," in cleaned:
             parts = cleaned.split(",")
             if len(parts[-1]) <= 2:
-                # 10,00 → decimal
                 cleaned = cleaned.replace(",", ".")
             else:
-                # 10,000 → miles sin decimal
                 cleaned = cleaned.replace(",", "")
+
         amount = float(cleaned)
-        if amount > 50_000_000:
+        if amount > 50_000_000 or amount <= 0:
             return None
         return amount
-    except ValueError:
+    except (ValueError, AttributeError):
         return None
 
 def extract_amount(text: str) -> float | None:
+    """
+    Extrae el monto total soportando todos los formatos de factura CR:
+    - Compre Bien / supermercados: TOTAL: 22 255,00
+    - Alymo / gasolineras: Total Factura: ₡ 10,000.00
+    - Factura Profesional / profesionales: Total: CRC 90,000.00
+    - TicoFactura / Alegra: Total: CRC 1,500.00
+    """
     patterns = [
-        r"TOTAL[:\s]*[₡¢]?\s*([\d][\d \.,]*\d)",
-        r"Total Factura[:\s]*[₡¢]?\s*([\d][\d \.,]*\d)",
-        r"Monto[:\s]*[₡¢]([\d][\d \.,]*\d)",
-        r"Sub Total[:\s]*[₡¢]?\s*([\d][\d \.,]*\d)",
+        # Formato: Total Factura: ₡ / CRC número
+        r"Total\s+Factura[:\s]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
+        # Formato: TOTAL: número (supermercados)
+        r"^TOTAL[:\s]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
+        # Formato: Total: CRC número (Factura Profesional)
+        r"Total[:\s]*CRC\s+([\d][\d ,\.]*\d)",
+        # Formato genérico Total con moneda
+        r"Total[:\s]*(?:CRC|₡|¢)\s*([\d][\d ,\.]*\d)",
+        # Formato: Monto:¢número (Alymo)
+        r"Monto[:\s]*(?:CRC|₡|¢)([\d][\d ,\.]*\d)",
+        # Formato: TOTAL sin moneda
+        r"\bTOTAL\b[:\s]*([\d][\d ,\.]*\d)",
     ]
+
     for pattern in patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
+        matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
         if matches:
             for match in reversed(matches):
                 result = parse_amount(match)
-                if result is not None and result > 0:
+                if result is not None:
                     return result
     return None
 
 def extract_date(text: str) -> str | None:
-    """Busca fechas en formatos costarricenses."""
+    """Busca fechas en todos los formatos CR."""
     patterns = [
+        r"Fecha[^:]*:\s*(\d{1,2}[-/]\d{1,2}[-/]\d{4})",
+        r"Fecha[^:]*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2})",
         r"\b(\d{1,2}/\d{1,2}/\d{4})\b",
-        r"Fecha[:\s]+(\d{1,2}/\d{1,2}/\d{4})",
-        r"FECHA[:\s]+(\d{1,2}/\d{1,2}/\d{4})",
         r"\b(\d{4}-\d{1,2}-\d{1,2})\b",
+        r"\b(\d{1,2}-\d{1,2}-\d{4})\b",
+        r"(\d{2}-\d{2}-\d{4})\s+\d{2}:\d{2}",  # formato Factura Profesional
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
@@ -61,48 +82,117 @@ def extract_date(text: str) -> str | None:
     return None
 
 def extract_vendor(text: str) -> str | None:
-    """Extrae el nombre del proveedor."""
-    # Busca patrones comunes en facturas CR
+    """Extrae el nombre del proveedor/emisor."""
+    # Patrones específicos por sistema de facturación
     patterns = [
-        r"^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s,\.]+(?:S\.A\.|S\.R\.L\.|LTDA\.?)?)",
+        # Factura Profesional: primera línea con nombre completo
+        r"^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑA-Za-záéíóúñ\s]+(?:S\.A\.|S\.R\.L\.|LTDA\.?|BARBOZA|RODRIGUEZ|QUESADA|VARELA|MORA)?)\n",
+        # Emisor explícito
         r"Emisor[:\s]+(.+)",
+        # Nombre de empresa en mayúsculas al inicio
+        r"^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s,\.&]+(?:S\.A\.|S\.R\.L\.)?)",
     ]
+
     for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
+        match = re.search(pattern, text, re.MULTILINE)
         if match:
-            vendor = match.group(1).strip()[:100]
-            if len(vendor) > 3:
+            vendor = match.group(1).strip()
+            vendor = re.sub(r'\s+', ' ', vendor)
+            if len(vendor) > 3 and len(vendor) <= 100:
                 return vendor
 
-    # Fallback: primera línea no vacía
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     if lines:
         return lines[0][:100]
     return None
 
 def extract_tax(text: str) -> float | None:
-    """Busca IVA o impuesto en formato costarricense."""
+    """
+    Extrae IVA/impuesto soportando todos los formatos CR.
+    - Supermercados: IMPUESTO: 1 756,83
+    - Factura Profesional: Total IVA: + CRC 3,600.00
+    - Alymo: Imp. de Ventas (13%): ₡ 0.00
+    """
     patterns = [
-        r"IMPUESTO[:\s]*[₡¢]?\s*([\d\s]+,\d{2})",
-        r"Imp\.\s*de\s*Ventas[^:]*[:\s]*[₡¢]?\s*([\d\s]+,\d{2})",
-        r"IVA[:\s]*[₡¢]?\s*([\d\s]+,\d{2})",
-        r"impuesto[:\s]*[₡¢]?\s*([\d\s]+,\d{2})",
+        r"Total\s+IVA[:\s+]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
+        r"IVA\s+Devuelto[:\s-]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
+        r"IMPUESTO[:\s]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
+        r"Imp\.\s*de\s*Ventas[^:]*[:\s]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
+        r"IVA[:\s]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
+        r"impuesto[:\s]*(?:CRC|₡|¢)?\s*([\d][\d ,\.]*\d)",
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return parse_amount(match.group(1))
+            result = parse_amount(match.group(1))
+            if result is not None:
+                return result
     return None
 
 def classify_category(text: str) -> str:
-    """Clasifica la factura por palabras clave."""
+    """
+    Clasifica por categoría basado en palabras clave de comercios CR.
+    Cubre los principales emisores del país.
+    """
     categories = {
-        "Alimentación": ["supermercado", "compre bien", "tiquete", "restaurante", "comida", "sodería", "panadería", "carnicería"],
-        "Transporte": ["gasolina", "combustible", "super", "diesel", "gasolinera", "alymo", "recope", "uber", "taxi", "peaje"],
-        "Servicios": ["internet", "electricidad", "agua", "telefono", "luz", "gas", "ICE", "AyA", "RACSA"],
-        "Salud": ["farmacia", "médico", "hospital", "clinica", "medicina", "caja", "CCSS"],
-        "Tecnología": ["amazon", "apple", "google", "microsoft", "software", "hardware", "computadora"],
+        "Alimentación": [
+            # Supermercados
+            "compre bien", "walmart", "maxi pali", "pali", "fresh market",
+            "super mas", "automercado", "pequeño mundo", "megasuper",
+            "supermercado", "tiquete electronico",
+            # Restaurantes y comida
+            "restaurante", "soderia", "soda ", "mcdonalds", "burger king",
+            "subway", "pizza hut", "dominos", "kfc", "taco bell",
+            "panaderia", "pasteleria", "cafeteria", "cafe ", "comida",
+            "carniceria", "pescaderia", "fruteria", "verduleria",
+        ],
+        "Transporte": [
+            # Combustible
+            "alymo", "gasolinera", "gasolina", "combustible", "super",
+            "diesel", "recope", "delta", "servicentro",
+            # Transporte
+            "uber", "taxi", "didi", "indriver", "peaje", "autopista",
+            "autobús", "autobus", "tren", "aeropuerto", "vuelo",
+            "parking", "parqueo", "alquiler de vehículo",
+        ],
+        "Servicios": [
+            # Utilities
+            "ice", "a y a", "aya", "racsa", "cnfl", "jasec",
+            "electricidad", "agua", "internet", "telefono", "celular",
+            "cable", "streaming", "netflix", "spotify",
+            # Servicios profesionales
+            "notaria", "abogado", "contador", "consultor",
+            # Gobierno
+            "municipalidad", "ccss", "imas", "bncr", "bcr",
+        ],
+        "Salud": [
+            # Farmacias
+            "farmacia", "fischel", "chavarria", "sucre", "la bomba",
+            "botica", "drogueria", "medicina", "medicamento",
+            # Médicos y clínicas
+            "clinica", "hospital", "medico", "doctor", "dentist",
+            "dental", "odontologo", "optometria", "laboratorio",
+            "examen", "consulta medica", "resina", "extraccion",
+            "ortodoncia", "radiografia",
+        ],
+        "Tecnología": [
+            "amazon", "apple", "google", "microsoft", "adobe",
+            "computadora", "laptop", "celular", "telefono", "samsung",
+            "software", "licencia", "hosting", "dominio",
+            "electronica", "tec store", "multimax",
+        ],
+        "Educación": [
+            "universidad", "colegio", "escuela", "instituto", "curso",
+            "matricula", "mensualidad", "beca", "libro", "librería",
+            "útiles", "utiles",
+        ],
+        "Hogar": [
+            "ferreteria", "el lagar", "construplaza", "novyplaza",
+            "muebles", "electrodomestico", "pinturas", "cemento",
+            "EPA", "cemaco", "cuestamoras",
+        ],
     }
+
     text_lower = text.lower()
     for category, keywords in categories.items():
         for keyword in keywords:
@@ -110,8 +200,8 @@ def classify_category(text: str) -> str:
                 return category
     return "Otros"
 
-def extract_invoice_data(text: str) -> dict:
-    """Orquesta la extracción y devuelve JSON limpio."""
+def extract_invoice_data_regex(text: str) -> dict:
+    """Extracción por regex (fallback). Devuelve JSON estructurado."""
     return {
         "vendor": extract_vendor(text),
         "amount": extract_amount(text),

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.services.ocr_service import extract_text_from_file
-from app.services.extractor import extract_invoice_data
+from app.services.invoice_extraction import extract_invoice_data
 import shutil, os, uuid
 
 router = APIRouter()
