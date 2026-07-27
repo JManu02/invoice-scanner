@@ -5,7 +5,6 @@ services:
   - type: web
     name: invoice-scanner-frontend
     runtime: static
-    plan: free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
     routes:
