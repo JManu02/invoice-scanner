@@ -27,41 +27,41 @@ export default function Register() {
   };
 
   return (
-    <div style={styles.root}>
-      <div style={styles.left}>
-        <div style={styles.leftInner}>
-          <div style={styles.brand}>
-            <div style={styles.brandIcon}>
+    <div className="auth-root">
+      <div className="auth-left">
+        <div className="auth-left-inner">
+          <div className="auth-brand">
+            <div className="auth-brand-icon">
               <Receipt size={28} color="white" weight="fill" />
             </div>
             <div>
-              <p style={styles.brandName}>InvoiceScan</p>
-              <p style={styles.brandSub}>Gestión inteligente de gastos</p>
+              <p className="auth-brand-name">InvoiceScan</p>
+              <p className="auth-brand-sub">Gestión inteligente de gastos</p>
             </div>
           </div>
-          <div style={styles.leftContent}>
-            <h2 style={styles.leftTitle}>Empieza hoy,<br />sin costo.</h2>
-            <p style={styles.leftDesc}>
+          <div className="auth-left-content">
+            <h2 className="auth-left-title">Empieza hoy,<br />sin costo.</h2>
+            <p className="auth-left-desc">
               Crea tu cuenta y comienza a escanear facturas de forma automática con tecnología OCR.
             </p>
           </div>
         </div>
       </div>
 
-      <div style={styles.right}>
-        <div style={styles.formCard}>
+      <div className="auth-right">
+        <div className="auth-form-card">
           <div style={{ marginBottom: 32 }}>
-            <h1 style={styles.formTitle}>Crear cuenta</h1>
-            <p style={styles.formSub}>Completa los datos para registrarte</p>
+            <h1 className="auth-form-title">Crear cuenta</h1>
+            <p className="auth-form-sub">Completa los datos para registrarte</p>
           </div>
 
-          {error && <div style={styles.errorBox}>{error}</div>}
+          {error && <div className="auth-error-box">{error}</div>}
 
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.fieldGroup}>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="auth-field-group">
               <label className="input-label">Nombre completo</label>
-              <div style={styles.inputWrap}>
-                <User size={16} color="var(--gray-400)" style={styles.inputIcon} />
+              <div className="auth-input-wrap">
+                <User size={16} color="var(--gray-400)" className="auth-input-icon" />
                 <input
                   type="text"
                   value={name}
@@ -74,10 +74,10 @@ export default function Register() {
               </div>
             </div>
 
-            <div style={styles.fieldGroup}>
+            <div className="auth-field-group">
               <label className="input-label">Correo electrónico</label>
-              <div style={styles.inputWrap}>
-                <EnvelopeSimple size={16} color="var(--gray-400)" style={styles.inputIcon} />
+              <div className="auth-input-wrap">
+                <EnvelopeSimple size={16} color="var(--gray-400)" className="auth-input-icon" />
                 <input
                   type="email"
                   value={email}
@@ -90,10 +90,10 @@ export default function Register() {
               </div>
             </div>
 
-            <div style={styles.fieldGroup}>
+            <div className="auth-field-group">
               <label className="input-label">Contraseña</label>
-              <div style={styles.inputWrap}>
-                <LockSimple size={16} color="var(--gray-400)" style={styles.inputIcon} />
+              <div className="auth-input-wrap">
+                <LockSimple size={16} color="var(--gray-400)" className="auth-input-icon" />
                 <input
                   type="password"
                   value={password}
@@ -112,36 +112,12 @@ export default function Register() {
             </button>
           </form>
 
-          <p style={styles.switchText}>
+          <p className="auth-switch-text">
             ¿Ya tienes cuenta?{" "}
-            <Link to="/login" style={styles.switchLink}>Iniciar sesión</Link>
+            <Link to="/login" className="auth-switch-link">Iniciar sesión</Link>
           </p>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  root: { display: "flex", minHeight: "100dvh" },
-  left: { flex: 1, background: "var(--green-800)", display: "flex", flexDirection: "column", padding: "40px 48px" },
-  leftInner: { display: "flex", flexDirection: "column", height: "100%", maxWidth: 420 },
-  brand: { display: "flex", alignItems: "center", gap: 12, marginBottom: "auto" },
-  brandIcon: { width: 48, height: 48, borderRadius: 12, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" },
-  brandName: { fontSize: "1.1rem", fontWeight: 700, color: "white", letterSpacing: "-0.02em" },
-  brandSub: { fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", marginTop: 2 },
-  leftContent: { paddingBottom: 48 },
-  leftTitle: { fontSize: "2.5rem", fontWeight: 700, color: "white", letterSpacing: "-0.04em", lineHeight: 1.15, marginBottom: 16 },
-  leftDesc: { fontSize: "0.95rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.6 },
-  right: { width: "460px", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", background: "var(--bg-app)" },
-  formCard: { width: "100%", maxWidth: 380 },
-  formTitle: { fontSize: "1.6rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.03em" },
-  formSub: { fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: 6 },
-  errorBox: { background: "#fef2f2", border: "1px solid #fca5a5", color: "#dc2626", padding: "10px 14px", borderRadius: 8, fontSize: "0.875rem", marginBottom: 20 },
-  form: { display: "flex", flexDirection: "column", gap: 18 },
-  fieldGroup: { display: "flex", flexDirection: "column", gap: 6 },
-  inputWrap: { position: "relative" },
-  inputIcon: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" },
-  switchText: { textAlign: "center", marginTop: 24, fontSize: "0.875rem", color: "var(--text-secondary)" },
-  switchLink: { color: "var(--green-800)", fontWeight: 600, textDecoration: "none" },
-};
