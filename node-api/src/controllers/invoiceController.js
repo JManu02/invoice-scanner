@@ -37,8 +37,8 @@ exports.processInvoice = async (req, res) => {
 
     res.status(201).json({ success: true, invoice });
   } catch (err) {
-    console.error("Error procesando factura:", err.message);
-    res.status(500).json({ message: "Error procesando la factura", error: err.message });
+    console.error("Error procesando factura:", err);
+    res.status(500).json({ message: "Error procesando la factura" });
   }
 };
 
@@ -57,7 +57,8 @@ exports.getInvoices = async (req, res) => {
 
     res.json({ invoices, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) {
-    res.status(500).json({ message: "Error obteniendo facturas", error: err.message });
+    console.error("Error obteniendo facturas:", err);
+    res.status(500).json({ message: "Error obteniendo facturas" });
   }
 };
 
@@ -79,7 +80,8 @@ exports.getStats = async (req, res) => {
 
     res.json({ byCategory: stats, totalSpent });
   } catch (err) {
-    res.status(500).json({ message: "Error obteniendo estadísticas", error: err.message });
+    console.error("Error obteniendo estadísticas:", err);
+    res.status(500).json({ message: "Error obteniendo estadísticas" });
   }
 };
 
@@ -96,6 +98,7 @@ exports.deleteInvoice = async (req, res) => {
 
     res.json({ message: "Factura eliminada correctamente" });
   } catch (err) {
-    res.status(500).json({ message: "Error eliminando factura", error: err.message });
+    console.error("Error eliminando factura:", err);
+    res.status(500).json({ message: "Error eliminando factura" });
   }
 };

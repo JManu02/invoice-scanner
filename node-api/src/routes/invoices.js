@@ -20,7 +20,8 @@ router.delete("/all", async (req, res) => {
     await require("../models/Invoice").deleteMany({ user: req.user._id });
     res.json({ message: "Todas las facturas eliminadas" });
   } catch (err) {
-    res.status(500).json({ message: "Error eliminando facturas", error: err.message });
+    console.error("Error eliminando facturas:", err);
+    res.status(500).json({ message: "Error eliminando facturas" });
   }
 });
 router.delete("/:id", deleteInvoice);
